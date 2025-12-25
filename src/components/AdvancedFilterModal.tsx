@@ -30,6 +30,11 @@ interface FilterState {
   minRating: number;
   categoryFilters: string[];
   accommodationType: string;
+  // Camping-specific filters
+  signalStrength: string[];
+  petSize: string[];
+  bathroomType: string[];
+  groundCondition: string[];
 }
 
 interface AdvancedFilterModalProps {
@@ -57,6 +62,35 @@ const facilityOptions = [
   { id: 'pet', icon: '🐕', labelKey: 'filters.petAllowed' },
   { id: 'tent-rental', icon: '⛺', labelKey: 'filters.tentRental' },
   { id: 'restaurant', icon: '🍽️', labelKey: 'filters.restaurant' },
+];
+
+// Mobile signal strength options (specific for Thai carriers)
+const signalOptions = [
+  { id: 'ais', labelKey: 'filters.signalAIS', icon: '📶' },
+  { id: 'true', labelKey: 'filters.signalTrue', icon: '📶' },
+  { id: 'dtac', labelKey: 'filters.signalDTAC', icon: '📶' },
+  { id: 'no-signal', labelKey: 'filters.noSignal', icon: '📵' },
+];
+
+// Pet size options (Thai camps often have size restrictions)
+const petSizeOptions = [
+  { id: 'small-pet', labelKey: 'filters.petSmall', icon: '🐕' },
+  { id: 'large-pet', labelKey: 'filters.petLarge', icon: '🦮' },
+  { id: 'exotic-pet', labelKey: 'filters.petExotic', icon: '🦎' },
+];
+
+// Bathroom type options
+const bathroomTypeOptions = [
+  { id: 'private-bathroom', labelKey: 'filters.bathroomPrivate', icon: '🚿' },
+  { id: 'shared-bathroom', labelKey: 'filters.bathroomShared', icon: '🚻' },
+];
+
+// Ground condition options (important for tent campers)
+const groundConditionOptions = [
+  { id: 'grass', labelKey: 'filters.groundGrass', icon: '🌿' },
+  { id: 'gravel', labelKey: 'filters.groundGravel', icon: '🪨' },
+  { id: 'soil', labelKey: 'filters.groundSoil', icon: '🟤' },
+  { id: 'concrete', labelKey: 'filters.groundConcrete', icon: '⬜' },
 ];
 
 // Accommodation types
@@ -91,6 +125,18 @@ const AdvancedFilterModal = ({ onApplyFilters, initialFilters }: AdvancedFilterM
   const [accommodationType, setAccommodationType] = useState<string>(
     initialFilters?.accommodationType || 'all'
   );
+  const [signalStrength, setSignalStrength] = useState<string[]>(
+    initialFilters?.signalStrength || []
+  );
+  const [petSize, setPetSize] = useState<string[]>(
+    initialFilters?.petSize || []
+  );
+  const [bathroomType, setBathroomType] = useState<string[]>(
+    initialFilters?.bathroomType || []
+  );
+  const [groundCondition, setGroundCondition] = useState<string[]>(
+    initialFilters?.groundCondition || []
+  );
 
   const handleFacilityToggle = (facilityId: string) => {
     setFacilities(prev =>
@@ -108,6 +154,38 @@ const AdvancedFilterModal = ({ onApplyFilters, initialFilters }: AdvancedFilterM
     );
   };
 
+  const handleSignalToggle = (signalId: string) => {
+    setSignalStrength(prev =>
+      prev.includes(signalId)
+        ? prev.filter(s => s !== signalId)
+        : [...prev, signalId]
+    );
+  };
+
+  const handlePetSizeToggle = (petId: string) => {
+    setPetSize(prev =>
+      prev.includes(petId)
+        ? prev.filter(p => p !== petId)
+        : [...prev, petId]
+    );
+  };
+
+  const handleBathroomTypeToggle = (bathroomId: string) => {
+    setBathroomType(prev =>
+      prev.includes(bathroomId)
+        ? prev.filter(b => b !== bathroomId)
+        : [...prev, bathroomId]
+    );
+  };
+
+  const handleGroundConditionToggle = (groundId: string) => {
+    setGroundCondition(prev =>
+      prev.includes(groundId)
+        ? prev.filter(g => g !== groundId)
+        : [...prev, groundId]
+    );
+  };
+
   const handleMinPriceChange = (value: string) => {
     const numValue = parseInt(value.replace(/[^0-9]/g, '')) || MIN_PRICE;
     const clampedValue = Math.min(Math.max(numValue, MIN_PRICE), priceRange[1]);
@@ -121,7 +199,17 @@ const AdvancedFilterModal = ({ onApplyFilters, initialFilters }: AdvancedFilterM
   };
 
   const handleApply = () => {
-    onApplyFilters({ priceRange, facilities, minRating, categoryFilters, accommodationType });
+    onApplyFilters({
+      priceRange,
+      facilities,
+      minRating,
+      categoryFilters,
+      accommodationType,
+      signalStrength,
+      petSize,
+      bathroomType,
+      groundCondition,
+    });
     setIsOpen(false);
   };
 
@@ -131,6 +219,10 @@ const AdvancedFilterModal = ({ onApplyFilters, initialFilters }: AdvancedFilterM
     setMinRating(0);
     setCategoryFilters([]);
     setAccommodationType('all');
+    setSignalStrength([]);
+    setPetSize([]);
+    setBathroomType([]);
+    setGroundCondition([]);
   };
 
   const activeFiltersCount =
@@ -138,7 +230,11 @@ const AdvancedFilterModal = ({ onApplyFilters, initialFilters }: AdvancedFilterM
     (facilities.length > 0 ? 1 : 0) +
     (minRating > 0 ? 1 : 0) +
     (categoryFilters.length > 0 ? 1 : 0) +
-    (accommodationType !== 'all' ? 1 : 0);
+    (accommodationType !== 'all' ? 1 : 0) +
+    (signalStrength.length > 0 ? 1 : 0) +
+    (petSize.length > 0 ? 1 : 0) +
+    (bathroomType.length > 0 ? 1 : 0) +
+    (groundCondition.length > 0 ? 1 : 0);
 
   const TriggerButton = (
     <Button variant="outline" size="icon" className="relative shrink-0 rounded-xl w-10 h-10">
@@ -284,6 +380,94 @@ const AdvancedFilterModal = ({ onApplyFilters, initialFilters }: AdvancedFilterM
             >
               <span className="text-base">{facility.icon}</span>
               <span className="truncate">{t(facility.labelKey)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 6. Mobile Signal Strength (Thai Carriers) */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium text-muted-foreground">{t('filters.signalStrength')}</Label>
+        <div className="flex flex-wrap gap-2">
+          {signalOptions.map(signal => (
+            <button
+              key={signal.id}
+              onClick={() => handleSignalToggle(signal.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all",
+                signalStrength.includes(signal.id)
+                  ? "bg-foreground text-background"
+                  : "bg-secondary hover:bg-secondary/80"
+              )}
+            >
+              <span>{signal.icon}</span>
+              <span>{t(signal.labelKey)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 7. Pet Size */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium text-muted-foreground">{t('filters.petSize')}</Label>
+        <div className="flex flex-wrap gap-2">
+          {petSizeOptions.map(pet => (
+            <button
+              key={pet.id}
+              onClick={() => handlePetSizeToggle(pet.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all",
+                petSize.includes(pet.id)
+                  ? "bg-foreground text-background"
+                  : "bg-secondary hover:bg-secondary/80"
+              )}
+            >
+              <span>{pet.icon}</span>
+              <span>{t(pet.labelKey)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 8. Bathroom Type */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium text-muted-foreground">{t('filters.bathroomType')}</Label>
+        <div className="flex flex-wrap gap-2">
+          {bathroomTypeOptions.map(bathroom => (
+            <button
+              key={bathroom.id}
+              onClick={() => handleBathroomTypeToggle(bathroom.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all",
+                bathroomType.includes(bathroom.id)
+                  ? "bg-foreground text-background"
+                  : "bg-secondary hover:bg-secondary/80"
+              )}
+            >
+              <span>{bathroom.icon}</span>
+              <span>{t(bathroom.labelKey)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 9. Ground Condition (for tent campers) */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium text-muted-foreground">{t('filters.groundCondition')}</Label>
+        <div className="flex flex-wrap gap-2">
+          {groundConditionOptions.map(ground => (
+            <button
+              key={ground.id}
+              onClick={() => handleGroundConditionToggle(ground.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all",
+                groundCondition.includes(ground.id)
+                  ? "bg-foreground text-background"
+                  : "bg-secondary hover:bg-secondary/80"
+              )}
+            >
+              <span>{ground.icon}</span>
+              <span>{t(ground.labelKey)}</span>
             </button>
           ))}
         </div>

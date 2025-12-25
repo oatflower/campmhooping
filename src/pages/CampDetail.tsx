@@ -17,6 +17,7 @@ import ScrollProgress from '@/components/ScrollProgress';
 import ImageLightbox from '@/components/ImageLightbox';
 import ReviewSection from '@/components/ReviewSection';
 import WeatherDetailCard from '@/components/WeatherDetailCard';
+import ReportListingModal from '@/components/ReportListingModal';
 import { accommodationOptions, addons } from '@/data/camps';
 import { useCamps } from '@/hooks/useCamps';
 import type { AccommodationOption } from '@/types/camp';
@@ -369,6 +370,19 @@ const CampDetail = () => {
               campRating={camp.rating}
               reviewCount={camp.reviewCount}
             />
+
+            {/* Report Listing - Notice and Takedown (Legal Compliance) */}
+            <div className="border-t border-border pt-6">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {t('campDetail.reportDesc', 'Found something wrong with this listing?')}
+                </p>
+                <ReportListingModal
+                  campId={camp.id}
+                  campName={getLocalizedName(camp)}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Booking Sidebar - Desktop (Airbnb Style) */}

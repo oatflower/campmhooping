@@ -603,3 +603,128 @@ export const categories = [
   { id: 'riverside', label: 'ริมแม่น้ำ', icon: '🌊' },
   { id: 'beach', label: 'ริมทะเล', icon: '🏖️' },
 ];
+
+// Zone and Pitch data for camps that support zone selection
+import type { CampZone } from '@/types/camp';
+
+export const campZones: Record<string, CampZone[]> = {
+  'camp-khao-yai-1': [
+    {
+      id: 'zone-a',
+      name: 'โซน A - ริมลำธาร',
+      nameEn: 'Zone A - Riverside',
+      description: 'พื้นที่ติดลำธาร เสียงน้ำไหลผ่อนคลาย อากาศเย็นสบาย',
+      descriptionEn: 'Waterfront area with relaxing stream sounds and cool breeze',
+      features: ['riverside', 'shaded', 'water-nearby'],
+      priceModifier: 15, // +15% premium
+      pitches: [
+        { id: 'a1', name: 'A1', zoneId: 'zone-a', size: 'large', maxTents: 2, status: 'available', features: ['riverside', 'shaded'] },
+        { id: 'a2', name: 'A2', zoneId: 'zone-a', size: 'large', maxTents: 2, status: 'available', features: ['riverside', 'shaded'] },
+        { id: 'a3', name: 'A3', zoneId: 'zone-a', size: 'medium', maxTents: 1, status: 'booked', features: ['riverside'] },
+        { id: 'a4', name: 'A4', zoneId: 'zone-a', size: 'medium', maxTents: 1, status: 'available', features: ['riverside'] },
+        { id: 'a5', name: 'A5', zoneId: 'zone-a', size: 'small', maxTents: 1, status: 'available', features: ['water-nearby'] },
+      ],
+    },
+    {
+      id: 'zone-b',
+      name: 'โซน B - วิวภูเขา',
+      nameEn: 'Zone B - Mountain View',
+      description: 'พื้นที่บนเนินสูง มองเห็นวิวภูเขาสวยงาม เหมาะกับการดูดาว',
+      descriptionEn: 'Elevated area with beautiful mountain views, perfect for stargazing',
+      features: ['sunrise-view', 'power-hookup'],
+      priceModifier: 10, // +10%
+      pitches: [
+        { id: 'b1', name: 'B1', zoneId: 'zone-b', size: 'large', maxTents: 2, status: 'available', features: ['sunrise-view', 'power-hookup'] },
+        { id: 'b2', name: 'B2', zoneId: 'zone-b', size: 'large', maxTents: 2, status: 'maintenance', features: ['sunrise-view', 'power-hookup'] },
+        { id: 'b3', name: 'B3', zoneId: 'zone-b', size: 'medium', maxTents: 1, status: 'available', features: ['sunrise-view'] },
+        { id: 'b4', name: 'B4', zoneId: 'zone-b', size: 'medium', maxTents: 1, status: 'available', features: ['power-hookup'] },
+        { id: 'b5', name: 'B5', zoneId: 'zone-b', size: 'small', maxTents: 1, status: 'booked', features: ['sunrise-view'] },
+        { id: 'b6', name: 'B6', zoneId: 'zone-b', size: 'small', maxTents: 1, status: 'available', features: [] },
+      ],
+    },
+    {
+      id: 'zone-c',
+      name: 'โซน C - ทั่วไป',
+      nameEn: 'Zone C - Standard',
+      description: 'พื้นที่มาตรฐาน ใกล้ห้องน้ำและร้านค้า สะดวกสบาย',
+      descriptionEn: 'Standard area close to restrooms and facilities, convenient location',
+      features: ['water-nearby'],
+      priceModifier: 0, // Base price
+      pitches: [
+        { id: 'c1', name: 'C1', zoneId: 'zone-c', size: 'large', maxTents: 2, status: 'available', features: ['water-nearby'] },
+        { id: 'c2', name: 'C2', zoneId: 'zone-c', size: 'medium', maxTents: 1, status: 'available', features: ['water-nearby'] },
+        { id: 'c3', name: 'C3', zoneId: 'zone-c', size: 'medium', maxTents: 1, status: 'available', features: [] },
+        { id: 'c4', name: 'C4', zoneId: 'zone-c', size: 'small', maxTents: 1, status: 'available', features: [] },
+        { id: 'c5', name: 'C5', zoneId: 'zone-c', size: 'small', maxTents: 1, status: 'available', features: [] },
+        { id: 'c6', name: 'C6', zoneId: 'zone-c', size: 'small', maxTents: 1, status: 'available', features: [] },
+        { id: 'c7', name: 'C7', zoneId: 'zone-c', size: 'small', maxTents: 1, status: 'booked', features: [] },
+        { id: 'c8', name: 'C8', zoneId: 'zone-c', size: 'small', maxTents: 1, status: 'available', features: [] },
+      ],
+    },
+  ],
+  'camp-kanchanaburi-1': [
+    {
+      id: 'zone-river',
+      name: 'โซน ริมแม่น้ำ',
+      nameEn: 'Riverside Zone',
+      description: 'พื้นที่ติดแม่น้ำแคว ตกปลาได้ บรรยากาศสงบ',
+      descriptionEn: 'Right by River Kwai, fishing allowed, peaceful atmosphere',
+      features: ['riverside', 'shaded'],
+      priceModifier: 20,
+      pitches: [
+        { id: 'r1', name: 'R1', zoneId: 'zone-river', size: 'large', maxTents: 2, status: 'available', features: ['riverside', 'shaded'] },
+        { id: 'r2', name: 'R2', zoneId: 'zone-river', size: 'large', maxTents: 2, status: 'available', features: ['riverside', 'shaded'] },
+        { id: 'r3', name: 'R3', zoneId: 'zone-river', size: 'medium', maxTents: 1, status: 'booked', features: ['riverside'] },
+        { id: 'r4', name: 'R4', zoneId: 'zone-river', size: 'medium', maxTents: 1, status: 'available', features: ['riverside'] },
+      ],
+    },
+    {
+      id: 'zone-forest',
+      name: 'โซน ในป่า',
+      nameEn: 'Forest Zone',
+      description: 'พื้นที่ร่มรื่นใต้ต้นไม้ใหญ่ เย็นสบายตลอดวัน',
+      descriptionEn: 'Shaded area under large trees, cool throughout the day',
+      features: ['shaded'],
+      priceModifier: 5,
+      pitches: [
+        { id: 'f1', name: 'F1', zoneId: 'zone-forest', size: 'medium', maxTents: 1, status: 'available', features: ['shaded'] },
+        { id: 'f2', name: 'F2', zoneId: 'zone-forest', size: 'medium', maxTents: 1, status: 'available', features: ['shaded'] },
+        { id: 'f3', name: 'F3', zoneId: 'zone-forest', size: 'small', maxTents: 1, status: 'available', features: ['shaded'] },
+        { id: 'f4', name: 'F4', zoneId: 'zone-forest', size: 'small', maxTents: 1, status: 'maintenance', features: ['shaded'] },
+        { id: 'f5', name: 'F5', zoneId: 'zone-forest', size: 'small', maxTents: 1, status: 'available', features: [] },
+      ],
+    },
+  ],
+  'camp-saraburi-1': [
+    {
+      id: 'zone-mist',
+      name: 'โซน ทะเลหมอก',
+      nameEn: 'Sea of Mist Zone',
+      description: 'พื้นที่ชมทะเลหมอกยามเช้า ตื่นมาเห็นวิวสวยทันที',
+      descriptionEn: 'Wake up to stunning sea of mist views every morning',
+      features: ['sunrise-view'],
+      priceModifier: 25,
+      pitches: [
+        { id: 'm1', name: 'M1', zoneId: 'zone-mist', size: 'large', maxTents: 2, status: 'available', features: ['sunrise-view'] },
+        { id: 'm2', name: 'M2', zoneId: 'zone-mist', size: 'large', maxTents: 2, status: 'booked', features: ['sunrise-view'] },
+        { id: 'm3', name: 'M3', zoneId: 'zone-mist', size: 'medium', maxTents: 1, status: 'available', features: ['sunrise-view'] },
+      ],
+    },
+    {
+      id: 'zone-cafe',
+      name: 'โซน ใกล้คาเฟ่',
+      nameEn: 'Near Cafe Zone',
+      description: 'พื้นที่ใกล้คาเฟ่และสิ่งอำนวยความสะดวก',
+      descriptionEn: 'Convenient location near cafe and facilities',
+      features: ['water-nearby', 'power-hookup'],
+      priceModifier: 0,
+      pitches: [
+        { id: 'k1', name: 'K1', zoneId: 'zone-cafe', size: 'medium', maxTents: 1, status: 'available', features: ['power-hookup'] },
+        { id: 'k2', name: 'K2', zoneId: 'zone-cafe', size: 'medium', maxTents: 1, status: 'available', features: ['power-hookup'] },
+        { id: 'k3', name: 'K3', zoneId: 'zone-cafe', size: 'small', maxTents: 1, status: 'available', features: ['water-nearby'] },
+        { id: 'k4', name: 'K4', zoneId: 'zone-cafe', size: 'small', maxTents: 1, status: 'available', features: ['water-nearby'] },
+        { id: 'k5', name: 'K5', zoneId: 'zone-cafe', size: 'small', maxTents: 1, status: 'available', features: [] },
+      ],
+    },
+  ],
+};

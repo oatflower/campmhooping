@@ -20,10 +20,12 @@ interface AuthContextType {
     session: Session | null;
     profileId: string | null;  // Profile ID from profiles table
     isAuthenticated: boolean;
+    isHost: boolean;  // Whether user has HOST or ADMIN role
     login: () => Promise<void>;
     logout: () => Promise<void>;
     updateUser: (updates: Partial<User>) => Promise<void>;
     isLoading: boolean;
+    loading: boolean;  // Alias for isLoading (backward compatibility)
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,27 +34,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [profileId, setProfileId] = useState<string | null>(null);
+    const [isHost, setIsHost] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Fetch profile ID from profiles table
-    const fetchProfileId = async (authUserId: string) => {
+    // Fetch profile ID and role from profiles table
+    const fetchProfileData = async (authUserId: string) => {
         try {
             const { data: profile, error } = await supabase
                 .from('profiles')
-                .select('id')
+                .select('id, role')
                 .eq('auth_user_id', authUserId)
                 .single();
 
             if (profile && !error) {
                 setProfileId(profile.id);
+                // Check if user has HOST or ADMIN role
+                setIsHost(profile.role === 'HOST' || profile.role === 'ADMIN');
             } else {
                 // Profile might not exist yet (trigger might be creating it)
                 console.warn('Profile not found for auth user, will retry...');
                 setProfileId(null);
+                setIsHost(false);
             }
         } catch (error) {
             console.error('Error fetching profile:', error);
             setProfileId(null);
+            setIsHost(false);
         }
     };
 
@@ -64,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setSession(initialSession);
                 if (initialSession?.user) {
                     mapSupabaseUser(initialSession.user);
-                    await fetchProfileId(initialSession.user.id);
+                    await fetchProfileData(initialSession.user.id);
                 }
             } catch (error) {
                 console.error("Auth init error:", error);
@@ -80,10 +87,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setSession(currentSession);
                 if (currentSession?.user) {
                     mapSupabaseUser(currentSession.user);
-                    await fetchProfileId(currentSession.user.id);
+                    await fetchProfileData(currentSession.user.id);
                 } else {
                     setUser(null);
                     setProfileId(null);
+                    setIsHost(false);
                     clearUserCache();
                 }
                 setIsLoading(false);
@@ -121,6 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setSession(null);
         setProfileId(null);
+        setIsHost(false);
         clearUserCache();
     };
 
@@ -155,7 +164,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, profileId, isAuthenticated: !!user, login, logout, updateUser, isLoading }}>
+        <AuthContext.Provider value={{
+            user,
+            session,
+            profileId,
+            isAuthenticated: !!user,
+            isHost,
+            login,
+            logout,
+            updateUser,
+            isLoading,
+            loading: isLoading  // Alias for backward compatibility
+        }}>
             {children}
         </AuthContext.Provider>
     );

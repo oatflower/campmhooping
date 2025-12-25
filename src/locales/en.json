@@ -146,7 +146,24 @@
     "amenities": "Amenities",
     "bbq": "BBQ area available",
     "restaurant": "Restaurant available",
-    "petAllowed": "Pets allowed"
+    "petAllowed": "Pets allowed",
+    "signalStrength": "Mobile Signal",
+    "signalAIS": "AIS",
+    "signalTrue": "True",
+    "signalDTAC": "DTAC",
+    "noSignal": "No Signal",
+    "petSize": "Pet Size",
+    "petSmall": "Small Dog (< 10 kg)",
+    "petLarge": "Large Dog (> 10 kg)",
+    "petExotic": "Exotic Pets",
+    "bathroomType": "Bathroom Type",
+    "bathroomPrivate": "Private Bathroom",
+    "bathroomShared": "Shared Bathroom",
+    "groundCondition": "Ground Condition (for tents)",
+    "groundGrass": "Grass",
+    "groundGravel": "Gravel",
+    "groundSoil": "Soil",
+    "groundConcrete": "Concrete"
   },
   "sections": {
     "popularCamps": "Popular Camps",
@@ -240,7 +257,8 @@
     "noChargeYet": "You won't be charged yet. Payment upon confirmation",
     "bookingSummary": "Booking Summary",
     "proceedBooking": "Proceed to Booking",
-    "accommodation": "Accommodation"
+    "accommodation": "Accommodation",
+    "reportDesc": "Found something wrong with this listing?"
   },
   "payment": {
     "title": "Payment",
@@ -1213,5 +1231,45 @@
     "listings": "Listings",
     "messages": "Messages",
     "switchToCamper": "Switch to Camper"
+  },
+  "zonePitch": {
+    "title": "Select Your Camping Spot",
+    "selectZone": "Select Zone",
+    "selectPitch": "Select your pitch",
+    "selectPitchIn": "Select Pitch in",
+    "pitch": "Pitch",
+    "available": "available",
+    "confirm": "Confirm Selection",
+    "sizeSmall": "S",
+    "sizeMedium": "M",
+    "sizeLarge": "L",
+    "statusAvailable": "Available",
+    "statusBooked": "Booked",
+    "statusMaintenance": "Maintenance",
+    "features": {
+      "riverside": "Riverside",
+      "shaded": "Shaded",
+      "power-hookup": "Power Hookup",
+      "water-nearby": "Near Water",
+      "sunrise-view": "Sunrise View"
+    }
+  },
+  "report": {
+    "title": "Report Listing",
+    "subtitle": "Report an issue with this listing",
+    "reason": "Reason for report",
+    "reasonPlaceholder": "Please select a reason",
+    "reasons": {
+      "inaccurate": "Inaccurate information",
+      "scam": "Suspected scam",
+      "offensive": "Offensive content",
+      "photos": "Photos don't match reality",
+      "other": "Other"
+    },
+    "details": "Additional details",
+    "detailsPlaceholder": "Describe the issue...",
+    "submit": "Submit Report",
+    "success": "Thank you for your report. We will review it shortly.",
+    "error": "Something went wrong. Please try again."
   }
 }

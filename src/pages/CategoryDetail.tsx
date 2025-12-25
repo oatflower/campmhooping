@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { camps, categories } from '@/data/camps';
 import CampCard from '@/components/CampCard';
-import CampMapView from '@/components/CampMapView';
 import AdvancedFilterModal from '@/components/AdvancedFilterModal';
-import { ChevronLeft, LayoutGrid, Map, List, X, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, Map, List, X, SlidersHorizontal, Loader2 } from 'lucide-react';
+
+// Lazy load the map component (includes large mapbox-gl library)
+const CampMapView = lazy(() => import('@/components/CampMapView'));
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -163,11 +165,13 @@ const CategoryDetail = () => {
           </div>
         ) : (
           <div className="fixed inset-0 pt-14">
-            <CampMapView
-              camps={filteredCamps}
-              hoveredCampId={hoveredCampId}
-              onMarkerClick={handleMarkerClick}
-            />
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-muted"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+              <CampMapView
+                camps={filteredCamps}
+                hoveredCampId={hoveredCampId}
+                onMarkerClick={handleMarkerClick}
+              />
+            </Suspense>
           </div>
         )}
 
@@ -311,11 +315,13 @@ const CategoryDetail = () => {
         {/* Right Side - Map */}
         {showMap && (
           <div className="hidden lg:block w-[45%] sticky top-[65px] h-[calc(100vh-65px)]">
-            <CampMapView
-              camps={filteredCamps}
-              hoveredCampId={hoveredCampId}
-              onMarkerClick={handleMarkerClick}
-            />
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-muted"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+              <CampMapView
+                camps={filteredCamps}
+                hoveredCampId={hoveredCampId}
+                onMarkerClick={handleMarkerClick}
+              />
+            </Suspense>
           </div>
         )}
       </div>

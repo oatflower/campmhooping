@@ -335,6 +335,150 @@ export async function hasUserReviewedCamp(
 }
 
 /**
+ * UPDATE: Host responds to a review
+ * RLS policy allows hosts to update reviews for their camps
+ */
+export async function addHostResponse(
+  reviewId: string,
+  response: string,
+  hostId?: string
+): Promise<CrudResult<ReviewRecord>> {
+  const currentUserId = await getCurrentUserId(hostId);
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: 'Authentication required to respond to reviews.',
+      errorCode: 'auth_required',
+    };
+  }
+
+  if (!response || response.trim().length < 10) {
+    return {
+      success: false,
+      error: 'Response must be at least 10 characters.',
+      errorCode: 'response_required',
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .update({
+        host_response: response.trim(),
+        host_response_at: new Date().toISOString(),
+      })
+      .eq('id', reviewId)
+      .select(`
+        *,
+        profiles (
+          name,
+          avatar_url
+        )
+      `)
+      .single();
+
+    if (error) {
+      console.error('Host response error:', error);
+      return {
+        success: false,
+        error: getReviewErrorMessage(error),
+        errorCode: error.code,
+      };
+    }
+
+    return {
+      success: true,
+      data: data as ReviewRecord,
+    };
+  } catch (err) {
+    console.error('Unexpected host response error:', err);
+    return {
+      success: false,
+      error: REVIEW_ERROR_MESSAGES['default'],
+    };
+  }
+}
+
+/**
+ * READ: Get reviews for all camps owned by host
+ */
+export async function getHostReviews(
+  hostId?: string
+): Promise<CrudResult<ReviewRecord[]>> {
+  const currentUserId = await getCurrentUserId(hostId);
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: 'Authentication required to view reviews.',
+      errorCode: 'auth_required',
+    };
+  }
+
+  try {
+    // First get all camps owned by this host
+    const { data: camps, error: campsError } = await supabase
+      .from('camps')
+      .select('id, name')
+      .eq('host_id', currentUserId);
+
+    if (campsError) {
+      console.error('Camps fetch error:', campsError);
+      return {
+        success: false,
+        error: 'Failed to fetch camps.',
+        errorCode: campsError.code,
+      };
+    }
+
+    if (!camps || camps.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    const campIds = camps.map(c => c.id);
+
+    // Get reviews for those camps
+    const { data, error } = await supabase
+      .from('reviews')
+      .select(`
+        *,
+        profiles (
+          name,
+          avatar_url
+        ),
+        camps (
+          id,
+          name
+        )
+      `)
+      .in('camp_id', campIds)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Reviews fetch error:', error);
+      return {
+        success: false,
+        error: getReviewErrorMessage(error),
+        errorCode: error.code,
+      };
+    }
+
+    return {
+      success: true,
+      data: (data || []) as ReviewRecord[],
+    };
+  } catch (err) {
+    console.error('Unexpected host reviews fetch error:', err);
+    return {
+      success: false,
+      error: REVIEW_ERROR_MESSAGES['default'],
+    };
+  }
+}
+
+/**
  * UPDATE: Increment helpful count
  */
 export async function markReviewHelpful(

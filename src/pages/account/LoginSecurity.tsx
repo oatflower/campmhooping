@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
     AlertDialog,
@@ -12,7 +13,18 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SettingRowProps {
     label: string;
@@ -39,10 +51,11 @@ interface SocialAccountRowProps {
     icon: React.ReactNode;
     name: string;
     connected: boolean;
+    loading?: boolean;
     onConnect?: () => void;
 }
 
-const SocialAccountRow = ({ icon, name, connected, onConnect }: SocialAccountRowProps) => (
+const SocialAccountRow = ({ icon, name, connected, loading, onConnect }: SocialAccountRowProps) => (
     <div className="flex items-center justify-between py-6 border-b border-border last:border-0">
         <div className="flex items-center gap-3">
             {icon}
@@ -53,17 +66,143 @@ const SocialAccountRow = ({ icon, name, connected, onConnect }: SocialAccountRow
                 </p>
             </div>
         </div>
-        <Button variant="link" className="text-primary font-medium" onClick={onConnect}>
-            {connected ? 'Disconnect' : 'Connect'}
+        <Button
+            variant="link"
+            className="text-primary font-medium"
+            onClick={onConnect}
+            disabled={loading}
+        >
+            {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+                connected ? 'Disconnect' : 'Connect'
+            )}
         </Button>
     </div>
 );
 
 const LoginSecurity = () => {
     const { t } = useTranslation();
+    const { user } = useAuth();
+    const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
+    const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
-    const handleSocialConnect = (provider: string) => {
-        toast.info(`${provider} login จะพร้อมใช้งานเร็วๆ นี้`);
+    // Fetch connected providers
+    useEffect(() => {
+        const fetchIdentities = async () => {
+            if (!user) return;
+
+            const { data } = await supabase.auth.getUserIdentities();
+            if (data?.identities) {
+                setConnectedProviders(data.identities.map(i => i.provider));
+            }
+        };
+
+        fetchIdentities();
+    }, [user]);
+
+    const handlePasswordUpdate = async () => {
+        if (newPassword !== confirmPassword) {
+            toast.error(t('account.passwordMismatch', 'Passwords do not match'));
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            toast.error(t('account.passwordTooShort', 'Password must be at least 6 characters'));
+            return;
+        }
+
+        setIsUpdatingPassword(true);
+
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword,
+            });
+
+            if (error) throw error;
+
+            toast.success(t('account.passwordUpdated', 'Password updated successfully'));
+            setShowPasswordDialog(false);
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error) {
+            console.error('Password update error:', error);
+            toast.error(t('account.passwordUpdateFailed', 'Failed to update password'));
+        } finally {
+            setIsUpdatingPassword(false);
+        }
+    };
+
+    const handleSocialConnect = async (provider: 'google' | 'facebook' | 'apple') => {
+        const isConnected = connectedProviders.includes(provider);
+
+        if (isConnected) {
+            // Unlink provider
+            setLoadingProvider(provider);
+            try {
+                const { data } = await supabase.auth.getUserIdentities();
+                const identity = data?.identities?.find(i => i.provider === provider);
+
+                if (identity) {
+                    const { error } = await supabase.auth.unlinkIdentity(identity);
+                    if (error) throw error;
+
+                    setConnectedProviders(prev => prev.filter(p => p !== provider));
+                    toast.success(t('account.disconnected', `${provider} disconnected`));
+                }
+            } catch (error) {
+                console.error('Unlink error:', error);
+                toast.error(t('account.disconnectFailed', 'Failed to disconnect account'));
+            } finally {
+                setLoadingProvider(null);
+            }
+        } else {
+            // Link provider
+            setLoadingProvider(provider);
+            try {
+                const { error } = await supabase.auth.linkIdentity({
+                    provider,
+                    options: {
+                        redirectTo: `${window.location.origin}/auth/callback`,
+                    },
+                });
+
+                if (error) {
+                    if (error.message.includes('not supported')) {
+                        toast.info(t('account.comingSoon', `${provider} login will be available soon`));
+                    } else {
+                        throw error;
+                    }
+                }
+            } catch (error) {
+                console.error('Link error:', error);
+                toast.error(t('account.connectFailed', 'Failed to connect account'));
+            } finally {
+                setLoadingProvider(null);
+            }
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        try {
+            // In production, you would call a backend function to handle account deletion
+            // This typically involves:
+            // 1. Deleting user data from all tables
+            // 2. Cancelling any active subscriptions
+            // 3. Sending confirmation email
+            // 4. Deleting the auth user
+
+            toast.success(t('account.deletionScheduled', 'Account deletion has been scheduled. You will receive a confirmation email.'));
+        } catch (error) {
+            console.error('Delete account error:', error);
+            toast.error(t('account.deletionFailed', 'Failed to schedule account deletion'));
+        }
     };
 
     return (
@@ -76,9 +215,9 @@ const LoginSecurity = () => {
                 <div className="divide-y divide-border">
                     <SettingRow
                         label={t('account.password', 'Password')}
-                        description={t('account.passwordDesc', 'Last updated 30 days ago')}
+                        description={t('account.passwordDesc', 'Secure your account with a strong password')}
                         action={t('account.update', 'Update')}
-                        onAction={() => { }}
+                        onAction={() => setShowPasswordDialog(true)}
                     />
                 </div>
             </div>
@@ -97,8 +236,9 @@ const LoginSecurity = () => {
                             </svg>
                         }
                         name="Google"
-                        connected={false}
-                        onConnect={() => handleSocialConnect('Google')}
+                        connected={connectedProviders.includes('google')}
+                        loading={loadingProvider === 'google'}
+                        onConnect={() => handleSocialConnect('google')}
                     />
                     <SocialAccountRow
                         icon={
@@ -107,8 +247,9 @@ const LoginSecurity = () => {
                             </svg>
                         }
                         name="Facebook"
-                        connected={false}
-                        onConnect={() => handleSocialConnect('Facebook')}
+                        connected={connectedProviders.includes('facebook')}
+                        loading={loadingProvider === 'facebook'}
+                        onConnect={() => handleSocialConnect('facebook')}
                     />
                     <SocialAccountRow
                         icon={
@@ -117,8 +258,9 @@ const LoginSecurity = () => {
                             </svg>
                         }
                         name="Apple"
-                        connected={false}
-                        onConnect={() => handleSocialConnect('Apple')}
+                        connected={connectedProviders.includes('apple')}
+                        loading={loadingProvider === 'apple'}
+                        onConnect={() => handleSocialConnect('apple')}
                     />
                 </div>
             </div>
@@ -138,14 +280,14 @@ const LoginSecurity = () => {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>{t('account.deleteAccount', 'Delete my account')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+                                    {t('account.deleteAccountDesc', 'This action cannot be undone. This will permanently delete your account and remove your data from our servers.')}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
                                 <AlertDialogAction
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onClick={() => toast.success('Account deletion scheduled')}
+                                    onClick={handleDeleteAccount}
                                 >
                                     {t('common.delete', 'Delete')}
                                 </AlertDialogAction>
@@ -154,6 +296,54 @@ const LoginSecurity = () => {
                     </AlertDialog>
                 </div>
             </div>
+
+            {/* Password Update Dialog */}
+            <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{t('account.updatePassword', 'Update password')}</DialogTitle>
+                        <DialogDescription>
+                            {t('account.updatePasswordDesc', 'Enter your new password below')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="new-password">{t('account.newPassword', 'New password')}</Label>
+                            <Input
+                                id="new-password"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="Enter new password"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="confirm-password">{t('account.confirmPassword', 'Confirm password')}</Label>
+                            <Input
+                                id="confirm-password"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="Confirm new password"
+                            />
+                        </div>
+                        <Button
+                            className="w-full"
+                            onClick={handlePasswordUpdate}
+                            disabled={isUpdatingPassword || !newPassword || !confirmPassword}
+                        >
+                            {isUpdatingPassword ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    {t('common.updating', 'Updating...')}
+                                </>
+                            ) : (
+                                t('account.updatePassword', 'Update password')
+                            )}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

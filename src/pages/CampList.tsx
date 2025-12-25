@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -16,8 +16,10 @@ import MobileListHeader from '@/components/MobileListHeader';
 import PriceNoticeBanner from '@/components/PriceNoticeBanner';
 import FloatingMapButton from '@/components/FloatingMapButton';
 import MapListingSheet from '@/components/MapListingSheet';
-import CampMapView from '@/components/CampMapView';
 import MobileSearchSheet from '@/components/search/MobileSearchSheet';
+
+// Lazy load the map component (includes large mapbox-gl library)
+const CampMapView = lazy(() => import('@/components/CampMapView'));
 import { categories } from '@/data/camps';
 import { useCamps } from '@/hooks/useCamps';
 import { Loader2 } from 'lucide-react';
@@ -36,11 +38,14 @@ const CampList = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const searchBarRef = useRef<HTMLDivElement>(null);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category');
+  const searchQueryFromUrl = searchParams.get('q');
+  const provinceFromUrl = searchParams.get('province');
 
-  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(provinceFromUrl);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
+  const [searchQuery, setSearchQuery] = useState<string>(searchQueryFromUrl || '');
 
   const [checkIn, setCheckIn] = useState<Date | undefined>();
   const [checkOut, setCheckOut] = useState<Date | undefined>();
@@ -83,6 +88,12 @@ const CampList = () => {
     setCheckOut(params.checkOut);
     setGuests(params.guests);
     setShowMobileSearch(false);
+
+    // Update URL params
+    const newParams = new URLSearchParams();
+    if (params.location) newParams.set('province', params.location);
+    if (selectedCategory) newParams.set('category', selectedCategory);
+    setSearchParams(newParams);
   };
 
   // Check if any filter is active
@@ -142,6 +153,17 @@ const CampList = () => {
 
   const filteredCamps = useMemo(() => {
     let result = [...camps];
+
+    // Text search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(camp =>
+        camp.name?.toLowerCase().includes(query) ||
+        camp.province?.toLowerCase().includes(query) ||
+        camp.location?.toLowerCase().includes(query) ||
+        camp.highlights?.some(h => h.toLowerCase().includes(query))
+      );
+    }
 
     if (selectedProvince) {
       result = result.filter(camp => camp.province === selectedProvince);
@@ -207,7 +229,7 @@ const CampList = () => {
     }
 
     return result;
-  }, [camps, selectedProvince, selectedCategory, advancedFilters.categoryFilters]);
+  }, [camps, selectedProvince, selectedCategory, advancedFilters.categoryFilters, searchQuery]);
 
   const clearFilters = () => {
     setSelectedProvince(null);
@@ -361,13 +383,15 @@ const CampList = () => {
       {/* Mobile: Map View */}
       {isMobile && viewMode === 'map' && (
         <div className="fixed inset-0 z-30 pt-14">
-          <CampMapView
-            camps={filteredCamps}
-            hoveredCampId={hoveredCampId}
-            onMarkerClick={(campId) => {
-              // Could scroll to camp or open detail
-            }}
-          />
+          <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-muted"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <CampMapView
+              camps={filteredCamps}
+              hoveredCampId={hoveredCampId}
+              onMarkerClick={(campId) => {
+                // Could scroll to camp or open detail
+              }}
+            />
+          </Suspense>
           <MapListingSheet
             camps={filteredCamps}
             onCampHover={setHoveredCampId}

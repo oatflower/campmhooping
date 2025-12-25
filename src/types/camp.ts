@@ -54,4 +54,29 @@ export interface BookingDetails {
   adults: number;
   children: number;
   addons: string[];
+  zoneId?: string;
+  pitchId?: string;
+}
+
+// Zone/Pitch system for camping slot selection
+export interface CampZone {
+  id: string;
+  name: string;
+  nameEn: string;
+  description: string;
+  descriptionEn: string;
+  features: string[]; // e.g., 'riverside', 'shaded', 'power-hookup'
+  priceModifier: number; // +/- from base price (percentage)
+  pitches: CampPitch[];
+}
+
+export interface CampPitch {
+  id: string;
+  name: string; // e.g., "A1", "A2", "B1"
+  zoneId: string;
+  size: 'small' | 'medium' | 'large'; // tent size accommodation
+  maxTents: number;
+  status: 'available' | 'booked' | 'maintenance';
+  features: string[]; // e.g., 'power-hookup', 'water-nearby'
+  position?: { x: number; y: number }; // for visual map layout
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -345,23 +345,9 @@ const Auth = () => {
                   </Button>
                 </form>
                 <div className="text-center mt-4 space-y-2">
-                  <Button
-                    variant="link"
-                    className="text-primary"
-                    onClick={async () => {
-                      setIsLoading(true);
-                      try {
-                        await supabase.auth.resetPasswordForEmail(email);
-                        toast.success(t('auth.resetEmailSent', 'Password reset email sent'));
-                      } catch {
-                        toast.error('Failed to send reset email');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                  >
+                  <Link to="/forgot-password" className="text-primary hover:underline text-sm">
                     {t('auth.forgotPassword', 'Forgot password?')}
-                  </Button>
+                  </Link>
                   <p className="text-sm text-muted-foreground">
                     {t('auth.noAccount', "Don't have an account?")}{' '}
                     <button onClick={() => setStep('register')} className="text-primary hover:underline font-medium">

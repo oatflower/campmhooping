@@ -33,8 +33,11 @@ const HostLayout = () => {
             {/* Navigation */}
             <nav className="hidden md:flex items-center gap-1">
               <NavTab to="/host" label={t('hostNav.today', 'Today')} />
+              <NavTab to="/host/bookings" label={t('hostNav.bookings', 'Bookings')} />
               <NavTab to="/host/calendar" label={t('hostNav.calendar', 'Calendar')} />
               <NavTab to="/host/listings" label={t('hostNav.listings', 'Listings')} />
+              <NavTab to="/host/earnings" label={t('hostNav.earnings', 'Earnings')} />
+              <NavTab to="/host/reviews" label={t('hostNav.reviews', 'Reviews')} />
               <NavTab to="/host/messages" label={t('hostNav.messages', 'Messages')} />
             </nav>
 

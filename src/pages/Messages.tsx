@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,14 +17,24 @@ const Messages = () => {
     const { t, i18n } = useTranslation();
     const { user, profileId } = useAuth();
     const navigate = useNavigate();
+    const { recipientId: recipientIdFromUrl } = useParams<{ recipientId?: string }>();
+    const [searchParams] = useSearchParams();
+    const campIdFromUrl = searchParams.get('campId');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Get conversations list
     const { conversations, loading: loadingConversations } = useConversations();
 
-    // Selected conversation state
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    // Selected conversation state - initialize from URL if provided
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(recipientIdFromUrl || null);
     const selectedConversation = conversations.find(c => c.recipientId === selectedUserId);
+
+    // Update selected user when URL changes
+    useEffect(() => {
+        if (recipientIdFromUrl && recipientIdFromUrl !== selectedUserId) {
+            setSelectedUserId(recipientIdFromUrl);
+        }
+    }, [recipientIdFromUrl]);
 
     // Chat with selected user
     const { messages, loading: loadingMessages, sending, send } = useChat(selectedUserId);
@@ -64,6 +74,8 @@ const Messages = () => {
 
     const handleSelectConversation = (recipientId: string) => {
         setSelectedUserId(recipientId);
+        // Update URL for deep linking
+        navigate(`/messages/${recipientId}`, { replace: true });
     };
 
     return (

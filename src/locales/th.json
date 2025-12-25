@@ -146,7 +146,24 @@
     "amenities": "สิ่งอำนวยความสะดวก",
     "bbq": "มีพื้นที่ BBQ",
     "restaurant": "มีร้านอาหาร",
-    "petAllowed": "สัตว์เลี้ยงเข้าได้"
+    "petAllowed": "สัตว์เลี้ยงเข้าได้",
+    "signalStrength": "สัญญาณมือถือ",
+    "signalAIS": "AIS",
+    "signalTrue": "True",
+    "signalDTAC": "DTAC",
+    "noSignal": "ไม่มีสัญญาณ",
+    "petSize": "ขนาดสัตว์เลี้ยง",
+    "petSmall": "สุนัขเล็ก (< 10 กก.)",
+    "petLarge": "สุนัขใหญ่ (> 10 กก.)",
+    "petExotic": "สัตว์แปลก",
+    "bathroomType": "ประเภทห้องน้ำ",
+    "bathroomPrivate": "ห้องน้ำส่วนตัว",
+    "bathroomShared": "ห้องน้ำรวม",
+    "groundCondition": "สภาพพื้น (สำหรับกางเต็นท์)",
+    "groundGrass": "หญ้า",
+    "groundGravel": "กรวด",
+    "groundSoil": "ดิน",
+    "groundConcrete": "คอนกรีต"
   },
   "sections": {
     "popularCamps": "แคมป์ยอดนิยม",
@@ -240,7 +257,8 @@
     "noChargeYet": "ยังไม่ถูกเรียกเก็บเงิน ชำระเมื่อยืนยันการจอง",
     "bookingSummary": "สรุปการจอง",
     "proceedBooking": "ดำเนินการจอง",
-    "accommodation": "ที่พัก"
+    "accommodation": "ที่พัก",
+    "reportDesc": "พบปัญหากับที่พักนี้?"
   },
   "payment": {
     "title": "ชำระเงิน",
@@ -1213,5 +1231,45 @@
     "listings": "ที่พัก",
     "messages": "ข้อความ",
     "switchToCamper": "สลับไปโหมดผู้เข้าพัก"
+  },
+  "zonePitch": {
+    "title": "เลือกจุดกางเต็นท์",
+    "selectZone": "เลือกโซน",
+    "selectPitch": "เลือกล็อกของคุณ",
+    "selectPitchIn": "เลือกล็อกใน",
+    "pitch": "ล็อก",
+    "available": "ล็อกว่าง",
+    "confirm": "ยืนยันการเลือก",
+    "sizeSmall": "S",
+    "sizeMedium": "M",
+    "sizeLarge": "L",
+    "statusAvailable": "ว่าง",
+    "statusBooked": "จองแล้ว",
+    "statusMaintenance": "ปิดปรับปรุง",
+    "features": {
+      "riverside": "ริมน้ำ",
+      "shaded": "มีร่มเงา",
+      "power-hookup": "มีจุดต่อไฟ",
+      "water-nearby": "ใกล้น้ำ",
+      "sunrise-view": "วิวพระอาทิตย์ขึ้น"
+    }
+  },
+  "report": {
+    "title": "แจ้งปัญหา",
+    "subtitle": "แจ้งปัญหาเกี่ยวกับที่พักนี้",
+    "reason": "เหตุผลในการแจ้ง",
+    "reasonPlaceholder": "กรุณาระบุเหตุผล",
+    "reasons": {
+      "inaccurate": "ข้อมูลไม่ถูกต้อง",
+      "scam": "สงสัยว่าเป็นการหลอกลวง",
+      "offensive": "เนื้อหาไม่เหมาะสม",
+      "photos": "รูปภาพไม่ตรงกับจริง",
+      "other": "อื่นๆ"
+    },
+    "details": "รายละเอียดเพิ่มเติม",
+    "detailsPlaceholder": "อธิบายปัญหาที่พบ...",
+    "submit": "ส่งรายงาน",
+    "success": "ขอบคุณสำหรับการแจ้ง เราจะตรวจสอบโดยเร็วที่สุด",
+    "error": "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง"
   }
 }

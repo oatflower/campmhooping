@@ -374,3 +374,386 @@ export async function getPaymentByBookingId(
     return customErrorResult<PaymentRecord>('Failed to fetch payment.');
   }
 }
+
+/**
+ * UPDATE: Cancel a booking
+ * Sets status to 'cancelled'
+ */
+export async function cancelBooking(
+  bookingId: string,
+  userId?: string
+): Promise<BookingResult<BookingRecord>> {
+  const currentUserId = await getCurrentUserId(userId);
+
+  if (!currentUserId) {
+    return customErrorResult<BookingRecord>('Authentication required to cancel booking.');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', bookingId)
+      .eq('user_id', currentUserId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Booking cancellation error:', error);
+      return errorResult<BookingRecord>(error, 'booking');
+    }
+
+    return successResult(data as BookingRecord);
+  } catch (err) {
+    console.error('Unexpected cancellation error:', err);
+    return customErrorResult<BookingRecord>('Failed to cancel booking.');
+  }
+}
+
+/**
+ * UPDATE: Update booking status
+ */
+export async function updateBookingStatus(
+  bookingId: string,
+  status: 'pending' | 'processing' | 'confirmed' | 'cancelled' | 'completed',
+  userId?: string
+): Promise<BookingResult<BookingRecord>> {
+  const currentUserId = await getCurrentUserId(userId);
+
+  if (!currentUserId) {
+    return customErrorResult<BookingRecord>('Authentication required to update booking.');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', bookingId)
+      .eq('user_id', currentUserId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Booking update error:', error);
+      return errorResult<BookingRecord>(error, 'booking');
+    }
+
+    return successResult(data as BookingRecord);
+  } catch (err) {
+    console.error('Unexpected update error:', err);
+    return customErrorResult<BookingRecord>('Failed to update booking.');
+  }
+}
+
+// ============================================================================
+// HOST BOOKING OPERATIONS
+// ============================================================================
+
+export interface HostBookingRecord extends BookingRecord {
+  guest?: {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url?: string;
+  };
+}
+
+/**
+ * READ: Get all bookings for camps owned by the current host
+ * RLS policy "Hosts can view bookings for their camps" enforces ownership
+ */
+export async function getHostBookings(
+  hostId?: string
+): Promise<BookingResult<HostBookingRecord[]>> {
+  const currentUserId = await getCurrentUserId(hostId);
+
+  if (!currentUserId) {
+    return customErrorResult<HostBookingRecord[]>('Authentication required to view host bookings.');
+  }
+
+  try {
+    // First get all camps owned by this host
+    const { data: camps, error: campsError } = await supabase
+      .from('camps')
+      .select('id')
+      .eq('host_id', currentUserId);
+
+    if (campsError) {
+      console.error('Camps fetch error:', campsError);
+      return errorResult<HostBookingRecord[]>(campsError, 'booking');
+    }
+
+    if (!camps || camps.length === 0) {
+      return successResult([] as HostBookingRecord[]);
+    }
+
+    const campIds = camps.map(c => c.id);
+
+    // Get bookings for those camps with guest info
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        camps (
+          id,
+          name,
+          location,
+          images,
+          price_per_night
+        ),
+        profiles!bookings_user_id_fkey (
+          id,
+          name,
+          email,
+          avatar_url
+        )
+      `)
+      .in('camp_id', campIds)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Host bookings fetch error:', error);
+      return errorResult<HostBookingRecord[]>(error, 'booking');
+    }
+
+    // Transform to include guest info
+    const bookings = (data || []).map(b => ({
+      ...b,
+      guest: b.profiles ? {
+        id: b.profiles.id,
+        name: b.profiles.name,
+        email: b.profiles.email,
+        avatar_url: b.profiles.avatar_url,
+      } : undefined,
+    })) as HostBookingRecord[];
+
+    return successResult(bookings);
+  } catch (err) {
+    console.error('Unexpected host bookings fetch error:', err);
+    return customErrorResult<HostBookingRecord[]>('Failed to fetch host bookings.');
+  }
+}
+
+/**
+ * UPDATE: Host confirms or declines a booking
+ * RLS policy "Hosts can update bookings for their camps" enforces ownership
+ */
+export async function updateHostBookingStatus(
+  bookingId: string,
+  status: 'confirmed' | 'cancelled',
+  hostId?: string
+): Promise<BookingResult<BookingRecord>> {
+  const currentUserId = await getCurrentUserId(hostId);
+
+  if (!currentUserId) {
+    return customErrorResult<BookingRecord>('Authentication required to update booking.');
+  }
+
+  try {
+    // RLS will verify the host owns the camp
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', bookingId)
+      .select(`
+        *,
+        camps (
+          id,
+          name,
+          location,
+          images
+        )
+      `)
+      .single();
+
+    if (error) {
+      console.error('Host booking update error:', error);
+      return errorResult<BookingRecord>(error, 'booking');
+    }
+
+    return successResult(data as BookingRecord);
+  } catch (err) {
+    console.error('Unexpected host booking update error:', err);
+    return customErrorResult<BookingRecord>('Failed to update booking status.');
+  }
+}
+
+// ============================================================================
+// HOST EARNINGS OPERATIONS
+// ============================================================================
+
+export interface HostEarningsRecord {
+  id: string;
+  booking_id: string;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  status: string;
+  created_at: string;
+  completed_at?: string;
+  booking?: {
+    id: string;
+    start_date: string;
+    end_date: string;
+    guest_count?: Record<string, number>;
+    camps?: {
+      name: string;
+    };
+  };
+  guest?: {
+    name: string;
+  };
+}
+
+export interface HostEarningsSummary {
+  available: number;
+  pending: number;
+  totalEarned: number;
+  thisMonth: number;
+  lastMonth: number;
+  transactions: HostEarningsRecord[];
+}
+
+/**
+ * READ: Get earnings summary for host
+ * Calculates from payments linked to host's camps
+ */
+export async function getHostEarnings(
+  hostId?: string
+): Promise<BookingResult<HostEarningsSummary>> {
+  const currentUserId = await getCurrentUserId(hostId);
+
+  if (!currentUserId) {
+    return customErrorResult<HostEarningsSummary>('Authentication required to view earnings.');
+  }
+
+  try {
+    // Get all camps owned by this host
+    const { data: camps, error: campsError } = await supabase
+      .from('camps')
+      .select('id')
+      .eq('host_id', currentUserId);
+
+    if (campsError) {
+      console.error('Camps fetch error:', campsError);
+      return errorResult<HostEarningsSummary>(campsError, 'booking');
+    }
+
+    if (!camps || camps.length === 0) {
+      return successResult({
+        available: 0,
+        pending: 0,
+        totalEarned: 0,
+        thisMonth: 0,
+        lastMonth: 0,
+        transactions: [],
+      });
+    }
+
+    const campIds = camps.map(c => c.id);
+
+    // Get bookings with payments for these camps
+    const { data: bookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select(`
+        id,
+        start_date,
+        end_date,
+        total_price,
+        status,
+        guest_count,
+        created_at,
+        camps (
+          name
+        ),
+        profiles!bookings_user_id_fkey (
+          name
+        )
+      `)
+      .in('camp_id', campIds)
+      .in('status', ['confirmed', 'completed'])
+      .order('created_at', { ascending: false });
+
+    if (bookingsError) {
+      console.error('Bookings fetch error:', bookingsError);
+      return errorResult<HostEarningsSummary>(bookingsError, 'booking');
+    }
+
+    // Calculate earnings
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    let available = 0;
+    let pending = 0;
+    let totalEarned = 0;
+    let thisMonth = 0;
+    let lastMonth = 0;
+
+    const transactions: HostEarningsRecord[] = [];
+
+    (bookings || []).forEach(booking => {
+      const amount = booking.total_price || 0;
+      const createdAt = new Date(booking.created_at);
+      const endDate = new Date(booking.end_date);
+
+      // Check if guest has checked out (end_date passed)
+      const isCheckedOut = endDate < now;
+
+      if (isCheckedOut) {
+        available += amount;
+      } else {
+        pending += amount;
+      }
+
+      totalEarned += amount;
+
+      if (createdAt >= thisMonthStart) {
+        thisMonth += amount;
+      } else if (createdAt >= lastMonthStart && createdAt <= lastMonthEnd) {
+        lastMonth += amount;
+      }
+
+      transactions.push({
+        id: booking.id,
+        booking_id: booking.id,
+        amount,
+        currency: 'THB',
+        payment_method: 'booking',
+        status: isCheckedOut ? 'completed' : 'pending',
+        created_at: booking.created_at,
+        completed_at: isCheckedOut ? booking.end_date : undefined,
+        booking: {
+          id: booking.id,
+          start_date: booking.start_date,
+          end_date: booking.end_date,
+          guest_count: booking.guest_count,
+          camps: booking.camps,
+        },
+        guest: booking.profiles ? { name: booking.profiles.name } : undefined,
+      });
+    });
+
+    return successResult({
+      available,
+      pending,
+      totalEarned,
+      thisMonth,
+      lastMonth,
+      transactions,
+    });
+  } catch (err) {
+    console.error('Unexpected earnings fetch error:', err);
+    return customErrorResult<HostEarningsSummary>('Failed to fetch earnings.');
+  }
+}
